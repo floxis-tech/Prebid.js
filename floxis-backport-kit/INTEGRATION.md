@@ -86,12 +86,42 @@ pbjs.addAdUnits([{
 (Floxis is IAB Europe TCF **Vendor ID 1609**), US Privacy, GPP and COPPA signals are handled by
 Prebid.js core and forwarded automatically.
 
-## 4. Verification & troubleshooting
+## 4. Enable iframe user sync (on by default in this integration)
+
+The Floxis adapter is **iframe-first**: an iframe cookie sync chains multiple demand-partner matches
+in a single call, so it materially out-matches a single image pixel — and match rate is revenue.
+Prebid core ships with iframe syncs **off** unless the publisher enables them, so the standard
+Floxis integration turns them **on** for Floxis. Add this to your Prebid configuration:
+
+```javascript
+pbjs.setConfig({
+  userSync: {
+    filterSettings: {
+      iframe: { bidders: ['floxis'], filter: 'include' }
+    }
+  }
+});
+```
+
+- Scoped to `bidders: ['floxis']` — it does **not** change sync behavior for your other SSPs.
+- **Already using `filterSettings.all`?** You're done — iframe is already enabled for every bidder.
+  Do **not** add the block above: Prebid core treats `filterSettings.all` and `filterSettings.iframe`
+  as mutually exclusive, and mixing them disables **all** syncs.
+
+**Turning it off (opt-out).** To disable Floxis iframe sync, set `filter: 'exclude'` (or drop
+`floxis` from the iframe `bidders` list) — Floxis then falls back to an image-pixel sync. To disable
+Floxis syncs entirely, exclude `floxis` from both `iframe` and `image`; `userSync.syncEnabled: false`
+disables syncs for all bidders.
+
+## 5. Verification & troubleshooting
 
 - **Enable debugging:** `pbjs.setConfig({ debug: true })` and watch the console.
 - **Module check:** confirm `floxisBidAdapter` appears in `pbjs.installedModules`.
 - **Traffic check:** look for `POST https://<region>.floxis.tech/pbjs?seat=...` requests and check
   `pbjs.getBidResponses()`.
+- **Iframe sync check:** after an auction, confirm an **iframe** to `https://px-<region>.floxis.tech/sync?seat=...`
+  loads (Network tab, type `document`/`iframe`). If you see an image pixel instead of an iframe, the
+  iframe `filterSettings` from step 4 is missing or excludes `floxis`.
 - **No requests fired?** Verify `libraries/floxisUtils/` was copied — a missing utility folder is
   the most common integration error.
 - **Run the adapter test suite** against your tree (needs Chrome; if the launcher can't find it,

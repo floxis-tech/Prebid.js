@@ -94,7 +94,7 @@ pbjs.addAdUnits([
 Only `seat` is required. `region` and `partner` are optional and accepted as-is (validated as DNS host labels) — any value routes to the matching `[<partner>-]<region>.floxis.tech` endpoint.
 
 ## User Sync
-The adapter registers cookie syncs to the Floxis trackers endpoint (`px-<region>.floxis.tech/sync`), which sets the Floxis DMP id and chains to the seat's demand-partner syncs. Both iframe and pixel syncs are supported; the type emitted follows your `userSync` configuration. Enable it for the adapter, e.g.:
+The adapter registers cookie syncs to the Floxis trackers endpoint (`px-<region>.floxis.tech/sync`), which sets the Floxis DMP id and chains to the seat's demand-partner syncs. The adapter is iframe-first — it emits an iframe sync whenever iframe is permitted, otherwise an image pixel. Prebid core gates iframe syncs behind the publisher's `userSync.filterSettings`, so enable iframe for Floxis (recommended — iframe out-matches image pixels):
 ```javascript
 pbjs.setConfig({
   userSync: {
@@ -104,6 +104,7 @@ pbjs.setConfig({
   }
 });
 ```
+If you already use `filterSettings.all`, iframe is already enabled for all bidders — do not add a separate `iframe` block (core treats `all` and `iframe` as mutually exclusive and mixing them disables all syncs). To opt out, set `filter: 'exclude'` (Floxis falls back to an image pixel).
 
 ## Error & Timeout Telemetry
 The adapter reports client-observed auction timeouts and bidder transport errors to Floxis as cookieless operational telemetry. Each beacon is a `keepalive` fetch sent with credentials omitted (no cookies) and scheduled off the auction's critical path, so it carries only the seat, region, event type, and relevant operational dimensions (HTTP status, timeout flag, duration, auction ID, publisher domain) — no user or device identifier is included. Consent signals are forwarded as opaque pass-through parameters where available. Each beacon fires at most once per distinct seat+region pair per event, and telemetry failures are silently suppressed so they never affect the auction lifecycle.
