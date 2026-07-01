@@ -113,7 +113,23 @@ pbjs.setConfig({
 Floxis syncs entirely, exclude `floxis` from both `iframe` and `image`; `userSync.syncEnabled: false`
 disables syncs for all bidders.
 
-## 5. Verification & troubleshooting
+## 5. Enable first-party fallback id (recommended)
+
+The adapter mints a random UUID in the publisher's own page context (`localStorage` + cookie, scoped to the publisher's origin) and sends it at `user.ext.floxisId`. This is an identity-of-last-resort for Safari, Firefox and other browsers where the Floxis third-party cookie (`__fxId`) is blocked — it does not affect Chrome/Edge, where the third-party cookie takes precedence on the backend.
+
+Since Prebid.js 7.x, bidder-level storage access is **denied by default**. Without the opt-in below, no id is generated and no storage is touched — a safe no-op, not an error. To enable it:
+
+```javascript
+pbjs.bidderSettings = {
+  floxis: {
+    storageAllowed: true
+  }
+};
+```
+
+This is scoped to the Floxis bidder only and does not affect storage permissions for your other SSPs. Storage access is further gated by Prebid.js core's `deviceAccess` config and GDPR purpose-1 consent under Floxis's registered gvlid (1609).
+
+## 6. Verification & troubleshooting
 
 - **Enable debugging:** `pbjs.setConfig({ debug: true })` and watch the console.
 - **Module check:** confirm `floxisBidAdapter` appears in `pbjs.installedModules`.
